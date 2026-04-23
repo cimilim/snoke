@@ -1,0 +1,20 @@
+services:
+  snoke:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    environment:
+      SNOKE_DATABASE_URL: "sqlite:////data/snoke.db"
+      SNOKE_JWT_SECRET: "${SNOKE_JWT_SECRET:?set in .env}"
+      SNOKE_JWT_ALG: "HS256"
+      SNOKE_JWT_EXPIRE_DAYS: "365"
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else 1)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3

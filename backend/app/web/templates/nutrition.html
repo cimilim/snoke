@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% block title %}Snoke – Ernährung{% endblock %}
+{% block content %}
+<section class="mb-6">
+  <div class="flex items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">Ernährung & Abnehmen</h1>
+      <p class="text-sm text-ink/70">Kalorien und Gewicht einfach tracken.</p>
+      <p class="text-xs text-ink/60 mt-1">Sport-Einträge werden im Rauch-/Dopaminmodell als positive Intervention berücksichtigt.</p>
+    </div>
+    <form method="get" action="/nutrition" class="flex items-center gap-2">
+      <label class="text-sm text-ink/70" for="day">Tag</label>
+      <input id="day" type="date" name="day" value="{{ selected_day }}" class="border rounded-lg px-2 py-1.5 text-sm">
+      <button class="text-sm border border-ink/20 rounded-lg px-3 py-1.5">Anzeigen</button>
+    </form>
+  </div>
+</section>
+
+<section class="grid gap-4 md:grid-cols-3">
+  <div class="bg-white/60 rounded-2xl p-5 shadow-sm">
+    <div class="text-xs uppercase tracking-wider text-ink/50 mb-1">Kalorien heute</div>
+    <div class="text-2xl font-semibold">{{ consumed_kcal }} kcal</div>
+    <p class="text-sm text-ink/70 mt-1">Ziel: {{ target_kcal }} kcal</p>
+    <p class="text-xs text-ink/60 mt-1">Basis {{ base_target_kcal }} + Sport {{ activity_kcal_burned }} kcal</p>
+    <p class="text-sm mt-1 {% if remaining_kcal < 0 %}text-danger{% else %}text-accent{% endif %}">
+      {% if remaining_kcal >= 0 %}Noch {{ remaining_kcal }} kcal frei{% else %}{{ (-remaining_kcal) }} kcal über Ziel{% endif %}
+    </p>
+  </div>
+  <div class="bg-white/60 rounded-2xl p-5 shadow-sm">
+    <div class="text-xs uppercase tracking-wider text-ink/50 mb-1">Gewicht</div>
+    <div class="text-2xl font-semibold">{{ latest_weight_kg }} kg</div>
+    <p class="text-sm text-ink/70 mt-1">
+      21-Tage-Delta:
+      {% if weight_delta_kg > 0 %}+{% endif %}{{ weight_delta_kg }} kg
+    </p>
+  </div>
+  <div class="bg-white/60 rounded-2xl p-5 shadow-sm">
+    <div class="text-xs uppercase tracking-wider text-ink/50 mb-1">Schnitt 7 Tage</div>
+    <div class="text-2xl font-semibold">{{ avg_kcal_7d }} kcal</div>
+    <p class="text-sm text-ink/70 mt-1">Durchschnitt pro Tag</p>
+  </div>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h2 class="text-lg font-medium mb-3">Makro-Ziele heute (WHO-orientiert, Fettabbau)</h2>
+  <div class="grid gap-3 md:grid-cols-3 text-sm">
+    <div class="rounded-xl border border-ink/10 p-3">
+      <div class="font-medium">Protein</div>
+      <div class="mt-1 text-ink/80">
+        Ist: <strong>{{ consumed_protein_g }} g</strong><br>
+        Ziel: {{ macro_targets.protein.min_g }} - {{ macro_targets.protein.max_g }} g
+      </div>
+      <div class="mt-1 text-xs {% if macro_status.protein == 'im_bereich' %}text-accent{% elif macro_status.protein == 'ueber' %}text-danger{% else %}text-warn{% endif %}">
+        {% if macro_status.protein == 'im_bereich' %}im Bereich{% elif macro_status.protein == 'ueber' %}über Bereich{% else %}unter Bereich{% endif %}
+      </div>
+    </div>
+    <div class="rounded-xl border border-ink/10 p-3">
+      <div class="font-medium">Fett</div>
+      <div class="mt-1 text-ink/80">
+        Ist: <strong>{{ consumed_fat_g }} g</strong><br>
+        Ziel: {{ macro_targets.fat.min_g }} - {{ macro_targets.fat.max_g }} g
+      </div>
+      <div class="mt-1 text-xs {% if macro_status.fat == 'im_bereich' %}text-accent{% elif macro_status.fat == 'ueber' %}text-danger{% else %}text-warn{% endif %}">
+        {% if macro_status.fat == 'im_bereich' %}im Bereich{% elif macro_status.fat == 'ueber' %}über Bereich{% else %}unter Bereich{% endif %}
+      </div>
+    </div>
+    <div class="rounded-xl border border-ink/10 p-3">
+      <div class="font-medium">Kohlenhydrate</div>
+      <div class="mt-1 text-ink/80">
+        Ist: <strong>{{ consumed_carb_g }} g</strong><br>
+        Ziel: {{ macro_targets.carb.min_g }} - {{ macro_targets.carb.max_g }} g
+      </div>
+      <div class="mt-1 text-xs {% if macro_status.carb == 'im_bereich' %}text-accent{% elif macro_status.carb == 'ueber' %}text-danger{% else %}text-warn{% endif %}">
+        {% if macro_status.carb == 'im_bereich' %}im Bereich{% elif macro_status.carb == 'ueber' %}über Bereich{% else %}unter Bereich{% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mt-6 grid gap-4 md:grid-cols-2">
+  <div class="bg-white/60 rounded-2xl p-5 shadow-sm">
+    <h2 class="text-lg font-medium mb-3">Mahlzeit hinzufügen</h2>
+    <form method="post" action="/nutrition/entry/add" class="space-y-3">
+      <input type="hidden" name="selected_day" value="{{ selected_day }}">
+      <div>
+        <label class="block text-sm text-ink/70 mb-1">Fertiges Gericht</label>
+        <select name="meal_id" class="w-full border rounded-lg px-3 py-2 text-sm">
+          <option value="">-- Optional auswählen --</option>
+          {% for m in meal_catalog %}
+          <option value="{{ m.id }}">{{ m.name }} ({{ m.kcal_per_portion }} kcal · P {{ m.protein_g }}g · F {{ m.fat_g }}g · KH {{ m.carb_g }}g)</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-sm text-ink/70 mb-1">Portionen</label>
+          <input name="portion" type="number" min="0.1" max="5.0" step="0.1" value="1.0" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-sm text-ink/70 mb-1">kcal (manuell)</label>
+          <input name="kcal" type="number" min="1" max="4000" placeholder="z. B. 550" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm text-ink/70 mb-1">Mahlzeitname (bei manuell)</label>
+        <input name="meal_name" placeholder="z. B. Wrap zuhause" class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label class="block text-xs text-ink/60 mb-1">Protein g (optional)</label>
+          <input name="protein_g" type="number" step="0.1" min="0" class="w-full border rounded-lg px-2 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-ink/60 mb-1">Fett g (optional)</label>
+          <input name="fat_g" type="number" step="0.1" min="0" class="w-full border rounded-lg px-2 py-2 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs text-ink/60 mb-1">KH g (optional)</label>
+          <input name="carb_g" type="number" step="0.1" min="0" class="w-full border rounded-lg px-2 py-2 text-sm">
+        </div>
+      </div>
+      <button class="w-full bg-accent text-white py-2.5 rounded-xl">Eintrag speichern</button>
+    </form>
+  </div>
+
+  <div class="bg-white/60 rounded-2xl p-5 shadow-sm">
+    <h2 class="text-lg font-medium mb-3">Gewicht eintragen</h2>
+    <form method="post" action="/nutrition/weight/add" class="space-y-3">
+      <input type="hidden" name="selected_day" value="{{ selected_day }}">
+      <div>
+        <label class="block text-sm text-ink/70 mb-1">Gewicht (kg)</label>
+        <input name="weight_kg" type="number" min="30" max="300" step="0.1" value="{{ latest_weight_kg }}" required class="w-full border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <button class="w-full bg-ink text-white py-2.5 rounded-xl">Gewicht speichern</button>
+    </form>
+
+    <h3 class="text-sm font-medium mt-6 mb-2">Eigenes Gericht anlegen</h3>
+    <form method="post" action="/nutrition/custom-meal/add" class="space-y-2">
+      <input type="hidden" name="selected_day" value="{{ selected_day }}">
+      <input name="name" required placeholder="Name" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <div class="grid grid-cols-2 gap-2">
+        <input name="kcal_per_portion" required type="number" min="1" max="4000" placeholder="kcal/Portion" class="border rounded-lg px-3 py-2 text-sm">
+        <input name="portion_label" placeholder="Portion, z. B. 1 Schale" class="border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <div class="grid grid-cols-3 gap-2">
+        <input name="protein_g" type="number" step="0.1" min="0" placeholder="Protein g" class="border rounded-lg px-3 py-2 text-sm">
+        <input name="fat_g" type="number" step="0.1" min="0" placeholder="Fett g" class="border rounded-lg px-3 py-2 text-sm">
+        <input name="carb_g" type="number" step="0.1" min="0" placeholder="KH g" class="border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <input name="category" placeholder="Kategorie (optional)" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <label class="inline-flex items-center gap-2 text-sm text-ink/70">
+        <input type="checkbox" name="is_healthy_alternative">
+        Als gesunde Alternative markieren
+      </label>
+      <button class="w-full border border-accent text-accent py-2 rounded-xl">Gericht speichern</button>
+    </form>
+
+    <h3 class="text-sm font-medium mt-6 mb-2">Sport eintragen (für Kalorien-Bonus)</h3>
+    <form method="post" action="/nutrition/activity/add" class="space-y-2">
+      <input type="hidden" name="selected_day" value="{{ selected_day }}">
+      <div class="grid grid-cols-2 gap-2">
+        <select name="sport_type" class="border rounded-lg px-3 py-2 text-sm">
+          {% for s in sport_types %}
+          <option value="{{ s }}">{{ s }}</option>
+          {% endfor %}
+        </select>
+        <input name="minutes" type="number" min="1" max="600" step="1" value="30"
+               placeholder="Minuten"
+               class="border rounded-lg px-3 py-2 text-sm">
+      </div>
+      <button class="w-full border border-ink/20 text-ink py-2 rounded-xl">Sport speichern</button>
+    </form>
+  </div>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h2 class="text-lg font-medium mb-3">Sport heute</h2>
+  {% if activity_entries %}
+  <ul class="space-y-2 text-sm">
+    {% for a in activity_entries %}
+    <li class="border border-ink/10 rounded-lg px-3 py-2">
+      <span class="font-medium">{{ a.sport_type }}</span>
+      <span class="text-ink/60"> · {{ a.minutes }} min · +{{ a.kcal_burned }} kcal</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-sm text-ink/60">Kein Sport eingetragen.</p>
+  {% endif %}
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h2 class="text-lg font-medium mb-3">Gesunde Alternativen</h2>
+  {% if healthy_meals %}
+  <div class="grid gap-2 md:grid-cols-2">
+    {% for m in healthy_meals %}
+    <form method="post" action="/nutrition/entry/add" class="border border-ink/10 rounded-lg p-3">
+      <input type="hidden" name="selected_day" value="{{ selected_day }}">
+      <input type="hidden" name="meal_id" value="{{ m.id }}">
+      <input type="hidden" name="portion" value="1.0">
+      <div class="font-medium text-sm">{{ m.name }}</div>
+      <div class="text-xs text-ink/60 mt-1">
+        {{ m.kcal_per_portion }} kcal · P {{ m.protein_g }}g · F {{ m.fat_g }}g · KH {{ m.carb_g }}g
+      </div>
+      <button class="mt-2 text-xs bg-accent text-white rounded px-2 py-1">Schnell hinzufügen</button>
+    </form>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-ink/60">Noch keine gesunden Alternativen verfügbar.</p>
+  {% endif %}
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h2 class="text-lg font-medium mb-3">Empfohlene nächste Gerichte</h2>
+  {% if meal_recommendations %}
+  <div class="grid gap-2 md:grid-cols-3">
+    {% for r in meal_recommendations %}
+    <form method="post" action="/nutrition/entry/add" class="border border-ink/10 rounded-lg p-3">
+      <input type="hidden" name="selected_day" value="{{ selected_day }}">
+      <input type="hidden" name="meal_id" value="{{ r.meal_id }}">
+      <input type="hidden" name="portion" value="1.0">
+      <div class="font-medium text-sm">{{ r.meal_name }}</div>
+      <div class="text-xs text-ink/60 mt-1">
+        {{ r.kcal }} kcal · P {{ r.protein_g }}g · F {{ r.fat_g }}g · KH {{ r.carb_g }}g
+      </div>
+      <div class="text-[11px] mt-1 text-accent">{{ r.reason }}</div>
+      <button class="mt-2 text-xs bg-accent text-white rounded px-2 py-1">Hinzufügen</button>
+    </form>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-sm text-ink/60">Aktuell keine Empfehlung verfügbar.</p>
+  {% endif %}
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h2 class="text-lg font-medium mb-3">Einträge am {{ selected_day }}</h2>
+  {% if entries %}
+  <ul class="space-y-2">
+    {% for e in entries %}
+    <li class="flex items-center justify-between border border-ink/10 rounded-lg px-3 py-2">
+      <div>
+        <span class="font-medium">{{ e.meal_name }}</span>
+        <span class="text-sm text-ink/60"> · {{ e.kcal }} kcal · Portion {{ e.portion }} · P {{ e.protein_g }}g · F {{ e.fat_g }}g · KH {{ e.carb_g }}g</span>
+      </div>
+      <form method="post" action="/nutrition/entry/delete">
+        <input type="hidden" name="selected_day" value="{{ selected_day }}">
+        <input type="hidden" name="event_id" value="{{ e.id }}">
+        <button class="text-danger text-xs border border-danger/30 rounded px-2 py-1">Löschen</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-sm text-ink/60">Keine Kalorien-Einträge für diesen Tag.</p>
+  {% endif %}
+</section>
+{% endblock %}
+

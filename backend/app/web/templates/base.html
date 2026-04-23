@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Snoke{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="/static/app.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:   "#0e1116",
+            paper: "#f7f5f0",
+            accent: "#3b8a74",
+            warn:  "#c86f3a",
+            danger:"#b2453a"
+          },
+          fontFamily: { sans: ["system-ui", "ui-sans-serif", "sans-serif"] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-paper text-ink min-h-full">
+  <header class="border-b border-black/10 bg-paper/90 backdrop-blur sticky top-0 z-10">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="font-semibold tracking-tight text-lg">
+        <span class="text-accent">snoke</span>
+      </a>
+      <nav class="flex gap-4 text-sm">
+        <a class="hover:underline" href="/">Dashboard</a>
+        <a class="hover:underline" href="/nutrition">Ernährung</a>
+        <a class="hover:underline" href="/progress">Verlauf</a>
+        <a class="hover:underline" href="/calendar">Kalender</a>
+        <a class="hover:underline" href="/how-it-works">Wie es rechnet</a>
+        <a class="hover:underline" href="/settings">Einstellungen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="{{ container_class|default('max-w-3xl') }} mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="max-w-3xl mx-auto px-4 py-8 text-xs text-ink/50">
+    Deine Daten bleiben lokal. Ein Atemzug nach dem anderen.
+  </footer>
+</body>
+</html>

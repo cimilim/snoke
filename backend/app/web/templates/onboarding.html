@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Willkommen bei Snoke{% endblock %}
+{% block content %}
+<section class="max-w-xl mx-auto">
+  <h1 class="text-3xl font-semibold mb-2">Willkommen.</h1>
+  <p class="text-ink/70 mb-6">
+    Snoke begleitet dich Schritt für Schritt beim Rauchausstieg. Beantworte
+    kurz Basisfragen zu Rauchverhalten und Körperprofil - danach startet dein
+    persönliches Modell.
+  </p>
+
+  <form method="post" action="/onboarding" class="space-y-6 bg-white/60 p-6 rounded-2xl shadow-sm">
+    <div>
+      <label class="block font-medium mb-1" for="baseline">
+        Wie viele Zigaretten rauchst du aktuell an einem typischen Tag?
+      </label>
+      <input id="baseline" name="baseline_cigarettes_per_day" type="number"
+             min="0" max="80" required
+             class="w-32 border rounded-xl px-3 py-2 text-lg"
+             value="15">
+      <p class="text-sm text-ink/60 mt-1">Schätzung reicht — das Modell lernt mit.</p>
+    </div>
+
+    <div>
+      <label class="block font-medium mb-1" for="rate">
+        Wie schnell willst du reduzieren?
+      </label>
+      <select id="rate" name="weaning_rate_pct" class="border rounded-xl px-3 py-2">
+        <option value="3">Sanft (−3 % pro Woche)</option>
+        <option value="5" selected>Normal (−5 % pro Woche)</option>
+        <option value="10">Ambitioniert (−10 % pro Woche)</option>
+        <option value="20">Sehr schnell (−20 % pro Woche)</option>
+      </select>
+      <p class="text-sm text-ink/60 mt-1">
+        Du kannst das später jederzeit ändern.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block font-medium mb-1" for="weight_kg">Gewicht (kg)</label>
+        <input id="weight_kg" name="weight_kg" type="number" min="35" max="250" step="0.1" required
+               class="w-full border rounded-xl px-3 py-2" value="75">
+      </div>
+      <div>
+        <label class="block font-medium mb-1" for="height_cm">Körpergröße (cm)</label>
+        <input id="height_cm" name="height_cm" type="number" min="120" max="230" step="0.1" required
+               class="w-full border rounded-xl px-3 py-2" value="175">
+      </div>
+      <div>
+        <label class="block font-medium mb-1" for="body_fat">Körperfett (0.05-0.60)</label>
+        <input id="body_fat" name="body_fat" type="number" min="0.05" max="0.60" step="0.01" required
+               class="w-full border rounded-xl px-3 py-2" value="0.20">
+      </div>
+      <div>
+        <label class="block font-medium mb-1" for="age_years">Alter</label>
+        <input id="age_years" name="age_years" type="number" min="14" max="110" required
+               class="w-full border rounded-xl px-3 py-2" value="30">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block font-medium mb-1" for="weekly_weight_loss_kg">Abnehmziel pro Woche (kg)</label>
+        <input id="weekly_weight_loss_kg" name="weekly_weight_loss_kg" type="number" min="0" max="2.0" step="0.1" required
+               class="w-full border rounded-xl px-3 py-2" value="0.4">
+      </div>
+    </div>
+
+    <button class="w-full bg-accent text-white font-medium py-3 rounded-xl hover:bg-accent/90">
+      Los geht's
+    </button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+# --- macOS / Xcode ---
+.DS_Store
+*.xcodeproj/
+!ios/Snoke/project.yml
+xcuserdata/
+*.xcworkspace/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# --- Swift Package Manager ---
+.swiftpm/
+.build/
+Package.resolved
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.egg-info/
+dist/
+build/
+
+# --- SQLite dev DB ---
+backend/*.db
+backend/*.db-journal
+
+# --- IDE ---
+.vscode/
+.idea/

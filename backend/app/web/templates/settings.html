@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Snoke – Einstellungen{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-6">Einstellungen</h1>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm max-w-xl">
+  <form method="post" action="/settings" class="space-y-4">
+    <div>
+      <label class="block font-medium mb-1" for="baseline">Baseline: Zigaretten pro Tag</label>
+      <input id="baseline" name="baseline_cigarettes_per_day" type="number"
+             min="0" max="80" required
+             value="{{ user.baseline_cigarettes_per_day or 15 }}"
+             class="w-32 border rounded-xl px-3 py-2">
+    </div>
+    <div>
+      <label class="block font-medium mb-1" for="rate">Entwöhnungsrate (% pro Woche)</label>
+      <input id="rate" name="weaning_rate_pct" type="number"
+             min="0" max="50"
+             value="{{ user.weaning_rate_pct }}"
+             class="w-32 border rounded-xl px-3 py-2">
+    </div>
+    <div>
+      <label class="block font-medium mb-1" for="rolling_weight_pct">Plan-Reaktivität (% 7-Tage-Verlauf)</label>
+      <input id="rolling_weight_pct" name="rolling_weight_pct" type="number"
+             min="0" max="100" step="1"
+             value="{{ rolling_weight_pct }}"
+             class="w-32 border rounded-xl px-3 py-2">
+      <p class="text-xs text-ink/60 mt-1">
+        0% = nur Baseline · 100% = nur 7-Tage-Schnitt (empfohlen: 20–40%).
+      </p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="block font-medium mb-1" for="weight_kg">Gewicht (kg)</label>
+        <input id="weight_kg" name="weight_kg" type="number" min="35" max="250" step="0.1"
+               value="{{ user.weight_kg or 75 }}"
+               class="w-full border rounded-xl px-3 py-2">
+      </div>
+      <div>
+        <label class="block font-medium mb-1" for="height_cm">Körpergröße (cm)</label>
+        <input id="height_cm" name="height_cm" type="number" min="120" max="230" step="0.1"
+               value="{{ user.height_cm or 175 }}"
+               class="w-full border rounded-xl px-3 py-2">
+      </div>
+      <div>
+        <label class="block font-medium mb-1" for="body_fat">Körperfett (0.05-0.60)</label>
+        <input id="body_fat" name="body_fat" type="number" min="0.05" max="0.60" step="0.01"
+               value="{{ user.body_fat or 0.20 }}"
+               class="w-full border rounded-xl px-3 py-2">
+      </div>
+      <div>
+        <label class="block font-medium mb-1" for="age_years">Alter</label>
+        <input id="age_years" name="age_years" type="number" min="14" max="110"
+               value="{{ user.age_years or 30 }}"
+               class="w-full border rounded-xl px-3 py-2">
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block font-medium mb-1" for="weekly_weight_loss_kg">Abnehmziel pro Woche (kg)</label>
+        <input id="weekly_weight_loss_kg" name="weekly_weight_loss_kg" type="number" min="0" max="2.0" step="0.1"
+               value="{{ user.weekly_weight_loss_kg or 0.4 }}"
+               class="w-full border rounded-xl px-3 py-2">
+      </div>
+    </div>
+    <button class="bg-accent text-white py-2 px-4 rounded-xl">Speichern</button>
+  </form>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm max-w-xl">
+  <h2 class="font-medium mb-2">Tracker-Token</h2>
+  <p class="text-sm text-ink/60 mb-3">
+    Kopiere diesen Token und übergib ihn dem Desktop-Tracker als
+    <code class="bg-ink/5 px-1 rounded">--token</code>. Er ist ein Jahr gültig.
+  </p>
+  <textarea readonly rows="3"
+            class="w-full text-xs font-mono bg-ink/5 rounded-lg p-2"
+            onclick="this.select()">{{ api_token }}</textarea>
+  <p class="text-xs text-ink/50 mt-2">
+    Device-ID: <code>{{ user.id }}</code>
+  </p>
+</section>
+
+<section class="mt-6 bg-red-50 border border-red-200 rounded-2xl p-6 shadow-sm max-w-xl">
+  <h2 class="font-medium mb-2 text-red-800">Gefahrenzone: Hard Reset</h2>
+  <p class="text-sm text-red-700 mb-3">
+    Löscht alle gespeicherten Events und setzt alle Einstellungen auf Standardwerte zurück.
+    Diese Aktion ist nicht rückgängig zu machen.
+  </p>
+  <form method="post" action="/settings/hard-reset" class="space-y-3">
+    <label class="block text-sm font-medium text-red-800" for="confirmation_text">
+      Tippe zur Bestätigung exakt <code>RESET</code> ein
+    </label>
+    <input id="confirmation_text" name="confirmation_text" type="text" required
+           class="w-full border border-red-300 rounded-xl px-3 py-2 bg-white">
+    <button class="bg-red-700 hover:bg-red-800 text-white py-2 px-4 rounded-xl">
+      Hard Reset ausführen
+    </button>
+  </form>
+</section>
+{% endblock %}
