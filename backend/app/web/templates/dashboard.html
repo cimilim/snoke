@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Snoke – Dashboard{% endblock %}
+{% block content %}
+<div id="dashboard"
+     hx-get="/web/dashboard"
+     hx-trigger="every 30s"
+     hx-sync="this:replace"
+     hx-swap="innerHTML">
+  {% include "_dashboard_main.html" %}
+</div>
+{% endblock %}

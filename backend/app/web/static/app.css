@@ -1,0 +1,3 @@
+/* Tiny overrides on top of Tailwind CDN. Kept deliberately minimal. */
+html { scroll-behavior: smooth; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

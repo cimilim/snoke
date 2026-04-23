@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Snoke – Verlauf{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold">Verlauf</h1>
+<p class="text-ink/60 mb-6">Die letzten 14 Tage auf einen Blick.</p>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6">
+  <h2 class="font-medium mb-2">Modellverlauf (2D, zwei y-Achsen)</h2>
+  <p class="text-sm text-ink/60 mb-4">
+    Der Plot zeigt, wie sich der latente Dopamin-Zustand und die berechnete
+    Verlangenswahrscheinlichkeit in den letzten 24h entwickeln
+    (diskret mit Δt = 60 Sekunden).
+  </p>
+  <div id="state2d" class="w-full" style="height: 420px;"></div>
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-4">Zigaretten pro Tag</h2>
+  <div class="flex items-end gap-1 h-40">
+    {% for d in days %}
+      {% set h = (d.cigarettes / max_cigs * 100) if max_cigs else 0 %}
+      <div class="flex-1 flex flex-col items-center justify-end">
+        <div class="w-full bg-danger/80 rounded-t" style="height: {{ h|round }}%"
+             title="{{ d.day.strftime('%a %d.%m.') }} — {{ d.cigarettes }} Zigaretten, {{ d.cravings }} Verlangen, {{ d.resisted }} widerstanden"></div>
+        <div class="text-[10px] text-ink/50 mt-1">{{ d.day.strftime('%d.%m') }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-4">Widerstanden vs. nachgegeben</h2>
+  <table class="w-full text-sm">
+    <thead class="text-ink/50 text-left">
+      <tr><th class="py-1">Tag</th><th>Zigaretten</th><th>Verlangen</th><th>widerstanden</th></tr>
+    </thead>
+    <tbody>
+      {% for d in days|reverse %}
+      <tr class="border-t border-ink/5">
+        <td class="py-1.5">{{ d.day.strftime('%a %d.%m.') }}</td>
+        <td>{{ d.cigarettes }}</td>
+        <td>{{ d.cravings }}</td>
+        <td class="text-accent">{{ d.resisted }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% if top_triggers %}
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-4">Stärkste Trigger insgesamt</h2>
+  <ul class="space-y-1 text-sm">
+    {% for t in top_triggers %}
+    <li class="flex items-center justify-between">
+      <span class="text-ink/80">{{ t.label }}</span>
+      <span class="text-ink/60">{{ (t.mean*100)|round }}% · n={{ t.samples }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+  (function () {
+    const traceData = {{ state_trace_json | safe }};
+    if (!traceData || !traceData.time || traceData.time.length === 0) {
+      return;
+    }
+    const x = traceData.time.map((iso) => new Date(iso));
+    const yD = traceData.dopamine;
+    const yC = traceData.craving;
+
+    const dopamineTrace = {
+      x,
+      y: yD,
+      mode: "lines",
+      type: "scatter",
+      line: { width: 3, color: "#3b8a74" },
+      name: "Dopamin (D)",
+      yaxis: "y",
+    };
+
+    const cravingTrace = {
+      x,
+      y: yC,
+      mode: "lines",
+      type: "scatter",
+      line: { width: 3, color: "#b2453a" },
+      name: "Verlangen (P)",
+      yaxis: "y2",
+    };
+
+    const layout = {
+      margin: { l: 50, r: 50, t: 10, b: 40 },
+      xaxis: { title: "Zeit" },
+      yaxis: {
+        title: "Dopamin (D)",
+        range: [0, 1],
+        side: "left",
+      },
+      yaxis2: {
+        title: "Verlangen (P)",
+        range: [0, 1],
+        overlaying: "y",
+        side: "right",
+      },
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      legend: { orientation: "h", y: 1.1 },
+    };
+
+    Plotly.newPlot("state2d", [dopamineTrace, cravingTrace], layout, {
+      responsive: true,
+      displayModeBar: true
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,246 @@
+<section class="grid gap-6 md:grid-cols-2">
+  <!-- Craving-Level -->
+  <div class="bg-white/60 rounded-2xl p-6 shadow-sm">
+    <div class="flex items-baseline justify-between">
+      <h2 class="text-lg font-medium">Aktuelles Verlangen</h2>
+      <span class="text-xs uppercase tracking-wider text-ink/50">
+        nächster Peak: {{ next_peak }}
+      </span>
+    </div>
+
+    <div class="mt-4 flex items-center gap-4">
+      <div class="relative w-24 h-24 flex items-center justify-center">
+        <svg viewBox="0 0 36 36" class="absolute inset-0 w-full h-full -rotate-90">
+          <circle cx="18" cy="18" r="16" fill="none"
+                  stroke="currentColor" stroke-opacity="0.1" stroke-width="3"/>
+          <circle cx="18" cy="18" r="16" fill="none"
+                  class="text-accent {% if p_color == 'crave-mid' %}text-warn{% elif p_color == 'crave-high' %}text-danger{% endif %}"
+                  stroke="currentColor" stroke-width="3"
+                  stroke-dasharray="{{ (p_now*100)|round(1) }},100"
+                  stroke-linecap="round"/>
+        </svg>
+        <div class="text-2xl font-semibold">{{ (p_now*100)|round }}%</div>
+      </div>
+      <div class="text-sm">
+        <div class="text-ink/60">Nächste Stunde bis zu</div>
+        <div class="text-xl font-medium">{{ (p_next_hour*100)|round }}%</div>
+        <div class="mt-1 text-xs text-ink/60">
+          Unsicherheit: {{ (p_low*100)|round(1) }}–{{ (p_high*100)|round(1) }}%
+          · Vertrauen: {{ confidence_level }}
+        </div>
+        {% if rule_reasons %}
+          <ul class="mt-2 text-ink/70 text-xs list-disc list-inside">
+            {% for r in rule_reasons %}<li>{{ r }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tagesbudget -->
+  <div class="bg-white/60 rounded-2xl p-6 shadow-sm">
+    <h2 class="text-lg font-medium">Tagesbudget</h2>
+    <div class="mt-4 flex items-end gap-3">
+      <div class="text-4xl font-semibold">
+        {{ status.smoked_today }}<span class="text-ink/40 text-xl"> / {{ status.target_today }}</span>
+      </div>
+      <div class="pb-1 text-sm
+        {% if status.state == 'on_track' %}text-accent
+        {% elif status.state == 'close_to_limit' %}text-warn
+        {% else %}text-danger{% endif %}">
+        {% if status.state == 'on_track' %}im Plan
+        {% elif status.state == 'close_to_limit' %}kurz vor Limit
+        {% else %}über dem Limit{% endif %}
+      </div>
+    </div>
+    <p class="mt-2 text-sm text-ink/60">
+      Rollender 7-Tage-Schnitt: {{ status.rolling_avg_7d }} / Tag.
+      Noch {{ status.remaining }} frei heute.
+    </p>
+  </div>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <div class="text-xs uppercase tracking-wider text-ink/50 mb-1">Coach-Plan Kalender-basiert</div>
+      <h3 class="text-lg font-medium">Mathematischer Reduktionsplan</h3>
+      <p class="text-sm text-ink/70 mt-1">
+        Plan für {{ coach_plan_day_label }} ·
+        Slots: {{ coach_plan.slot_count }} · verbleibend: {{ coach_plan.remaining }}
+        {% if coach_plan.next_slot_at %}· nächstes Fenster: {{ fmt_time(coach_plan.next_slot_at) }}{% endif %}
+      </p>
+      {% if coach_plan.slot_times %}
+      <p class="mt-1 text-xs text-ink/60">
+        Geplante Uhrzeiten: {{ coach_plan.slot_times | join(", ") }}
+      </p>
+      {% endif %}
+      {% if coach_plan.current_window_remaining_min > 0 %}
+      <p class="mt-1 text-xs text-ink/60">
+        Aktuell freies Fenster: noch {{ coach_plan.current_window_remaining_min }} Minuten.
+      </p>
+      {% endif %}
+      <p class="mt-2 text-sm {% if coach_plan.allow_now %}text-danger{% else %}text-ink/80{% endif %}">
+        {{ coach_plan.message }}
+      </p>
+      <p class="mt-1 text-xs text-ink/60">
+        {{ calendar_hint }}
+      </p>
+    </div>
+    <div class="text-right text-xs text-ink/50 max-w-[180px]">
+      Nutzt Logbuch + Gewohnheitsmuster. Wearable-Signale (Puls/HRV/Bewegung)
+      sind als nächster Integrationsschritt vorgesehen.
+    </div>
+  </div>
+</section>
+
+{% if activity_hint %}
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h3 class="text-lg font-medium mb-1">Letzte Sport-Intervention</h3>
+  <p class="text-sm text-ink/80">
+    {{ activity_hint.sport }} · {{ activity_hint.minutes }} min · {{ activity_hint.kcal_burned }} kcal
+  </p>
+  <p class="mt-1 text-xs text-ink/60">
+    Modellwirkung: Dopamin-Boost {{ activity_hint.dopamine_boost }}, Entlastung Entzug {{ activity_hint.withdrawal_relief }}.
+  </p>
+</section>
+{% endif %}
+
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h3 class="text-lg font-medium mb-1">Termin einstellen</h3>
+  <p class="text-sm text-ink/70 mb-4">
+    Trage hier direkt einen Termin ein. In diesem Zeitraum plant Snoke
+    keine Zigarette ein.
+  </p>
+  <form hx-post="/calendar/appointments/add" hx-target="#dashboard" hx-swap="innerHTML"
+        class="grid grid-cols-1 md:grid-cols-4 gap-3">
+    <input type="hidden" name="selected_day" value="{{ planning_day_iso }}">
+    <input type="hidden" name="return_to" value="/">
+    <input name="title" placeholder="z. B. Vorlesung"
+           class="border rounded-lg px-3 py-2 md:col-span-2" required>
+    <input type="date" name="date" value="{{ planning_day_iso }}" class="border rounded-lg px-3 py-2" required>
+    <div class="grid grid-cols-2 gap-2 md:col-span-4">
+      <input type="time" name="start_time" class="border rounded-lg px-3 py-2" required>
+      <input type="time" name="end_time" class="border rounded-lg px-3 py-2" required>
+    </div>
+    <button class="md:col-span-4 bg-ink text-white py-2.5 rounded-xl">
+      Termin speichern
+    </button>
+  </form>
+</section>
+
+<!-- Nudge -->
+{% if nudge %}
+<section class="mt-6 bg-accent/10 border border-accent/30 rounded-2xl p-5">
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <div class="text-xs uppercase tracking-wider text-accent/80 mb-1">Empfehlung jetzt</div>
+      <h3 class="text-lg font-medium">{{ nudge.title }}</h3>
+      <p class="mt-1 text-ink/80">{{ nudge.body }}</p>
+    </div>
+    <form hx-post="/web/nudge/accept" hx-target="#dashboard" hx-swap="innerHTML"
+          hx-sync="#dashboard:replace"
+          class="flex flex-col gap-2">
+      <input type="hidden" name="nudge_id" value="{{ nudge.id }}">
+      <button type="submit" name="accepted" value="yes"
+              class="bg-accent text-white text-sm rounded-lg px-3 py-1.5">
+        Mach ich
+      </button>
+      <button type="submit" name="accepted" value="no"
+              class="text-ink/60 text-xs rounded-lg px-3 py-1.5 border border-ink/10">
+        Später
+      </button>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+<!-- Quick-Log Buttons -->
+<section class="mt-6 grid gap-4 md:grid-cols-2">
+  <form hx-post="/web/log/cigarette" hx-target="#dashboard" hx-swap="innerHTML"
+        class="bg-white/60 rounded-2xl p-5 shadow-sm">
+    <h3 class="font-medium">Ich habe geraucht</h3>
+    <label class="block text-sm text-ink/60 mt-3 mb-1">Auslöser (optional)</label>
+    <select name="trigger" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <option value="">—</option>
+      <option value="coffee">Kaffee</option>
+      <option value="meal">nach Essen</option>
+      <option value="stress">Stress</option>
+      <option value="alcohol">Alkohol</option>
+      <option value="break">Pause</option>
+      <option value="social">soziale Situation</option>
+    </select>
+    <button class="mt-4 w-full bg-danger/90 text-white py-3 rounded-xl font-medium hover:bg-danger">
+      Zigarette eintragen
+    </button>
+  </form>
+
+  <form hx-post="/web/log/craving" hx-target="#dashboard" hx-swap="innerHTML"
+        class="bg-white/60 rounded-2xl p-5 shadow-sm">
+    <h3 class="font-medium">Verlangen — aber widerstanden</h3>
+    <label class="block text-sm text-ink/60 mt-3 mb-1">Intensität (1–10)</label>
+    <input name="intensity" type="number" min="1" max="10" value="5"
+           class="w-24 border rounded-lg px-3 py-2 text-sm">
+    <label class="block text-sm text-ink/60 mt-3 mb-1">Auslöser (optional)</label>
+    <select name="trigger" class="w-full border rounded-lg px-3 py-2 text-sm">
+      <option value="">—</option>
+      <option value="coffee">Kaffee</option>
+      <option value="meal">nach Essen</option>
+      <option value="stress">Stress</option>
+      <option value="alcohol">Alkohol</option>
+      <option value="break">Pause</option>
+      <option value="social">soziale Situation</option>
+    </select>
+    <div class="mt-4 grid grid-cols-2 gap-2">
+      <button name="resisted" value="yes"
+              class="bg-accent text-white py-3 rounded-xl font-medium hover:bg-accent/90">
+        Widerstanden
+      </button>
+      <button name="resisted" value="no"
+              class="border border-ink/10 py-3 rounded-xl text-ink/70 hover:bg-ink/5">
+        Nachgegeben
+      </button>
+    </div>
+  </form>
+</section>
+
+<!-- Letzte Ereignisse -->
+{% if recent %}
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h3 class="font-medium mb-3">Zuletzt</h3>
+  <ul class="divide-y divide-ink/5 text-sm">
+    {% for e in recent %}
+    <li class="py-2 flex items-center justify-between">
+      <div>
+        {% if e.kind == 'cigarette' %}
+          <span class="text-danger font-medium">Zigarette</span>
+        {% else %}
+          <span class="text-accent font-medium">
+            Verlangen (Stärke {{ e.payload.get('intensity', '—') }})
+            {% if e.payload.get('resisted') %} · widerstanden{% endif %}
+          </span>
+        {% endif %}
+        {% if e.payload.get('trigger') %}
+          · <span class="text-ink/60">{{ e.payload.get('trigger') }}</span>
+        {% endif %}
+      </div>
+      <time class="text-ink/50">{{ fmt_time(e.occurred_at) }}</time>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if top_triggers %}
+<section class="mt-6 bg-white/60 rounded-2xl p-5 shadow-sm">
+  <h3 class="font-medium mb-3">Deine stärksten Trigger</h3>
+  <ul class="space-y-1 text-sm">
+    {% for t in top_triggers %}
+    <li class="flex items-center justify-between">
+      <span class="text-ink/80">{{ t.label }}</span>
+      <span class="text-ink/60">{{ (t.mean*100)|round }}% · n={{ t.samples }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}

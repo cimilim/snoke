@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+{% block title %}Snoke – Wie es rechnet{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-2">Wie Snoke im Hintergrund rechnet</h1>
+<p class="text-ink/70 mb-6">
+  Diese Seite zeigt die Gleichungen im Lehrbuchstil, kurze Erklärungen und
+  die aktuell eingesetzten Zahlenwerte.
+</p>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6">
+  <h2 class="font-medium mb-3">Gesamtlogik als Fließtext</h2>
+  <p class="text-sm leading-7 text-ink/80">
+    Snoke rechnet als dynamisches Zustandsmodell in kleinen Zeitschritten (\(\Delta t\), typischerweise 60 Sekunden). Aus
+    Ereignissen wie Zigarette, Craving-Eintrag, Sportaktivität und Kontext (Stress-/Cue-Proxies) werden Eingangsgrößen
+    für das Modell gebildet. Intern simuliert Snoke die drei latenten Zustände Dopamin \(D\), Withdrawal \(W\) und
+    Habit \(H\), wobei jeder Zustand einer biologisch plausiblen Logik folgt: Effekte klingen exponentiell ab, während
+    neue Reize (Nikotin, Reward, Stress, Cues, Aktionen) Zustände erhöhen oder senken. Das Nikotinsignal wird dabei
+    zunächst aus Dosis und Körperprofil in eine wirksame Stärke übersetzt und anschließend zeitlich abgebaut. Für den
+    Dopaminanteil nutzt Snoke zwei Zeitskalen (fast/slow), damit kurzfristige Peaks und langsamere Nachwirkungen parallel
+    erfasst werden. Aus den aktuellen Zuständen berechnet das Modell über einen linearen Score \(z_t\) und eine
+    Sigmoidfunktion die momentane Verlangenswahrscheinlichkeit \(p_t^{model}\). Diese Modellwahrscheinlichkeit ist die
+    mathematische Basis, wird aber für die praktische Coach-Entscheidung um eine Regel- und Planungsschicht ergänzt:
+    Kalenderfenster, freie Slots, Tagesbudget und Sicherheitslogik bestimmen, ob „jetzt rauchen“, „warten“ oder
+    „Fenster folgt in X Minuten“ angezeigt wird. Das resultierende Nutzerverhalten fließt wiederum als neue Ereignisse
+    zurück in den nächsten Rechenschritt. Dadurch entsteht ein geschlossener Regelkreis, der Vorhersage, Planung und
+    Verhalten laufend miteinander koppelt.
+  </p>
+</section>
+
+<section class="bg-white/60 rounded-2xl p-4 shadow-sm mb-6">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div>
+      <div class="font-medium">Ansicht wählen</div>
+      <div class="text-xs text-ink/70">Einfach für schnelles Erklären, Expertenmodus für volle Formel-Details.</div>
+    </div>
+    <div class="inline-flex rounded-xl border border-black/10 overflow-hidden">
+      <button id="mode-simple-btn" type="button" class="px-3 py-2 text-sm bg-accent text-white">Einfach</button>
+      <button id="mode-expert-btn" type="button" class="px-3 py-2 text-sm bg-white text-ink">Expertenmodus</button>
+    </div>
+  </div>
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6 mode-expert hidden">
+  <h2 class="font-medium mb-3">Grafische Regelkreise (deine Gleichungen)</h2>
+  <p class="text-sm text-ink/70 mb-4">
+    Diese Diagramme sind direkt auf dein Modell gemappt und zeigen Signalfluss + Rückkopplung.
+  </p>
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+    <div class="rounded-xl bg-white border border-black/10 p-3">
+      <div class="text-sm font-medium mb-2">A) Dynamik-Kern: Nikotin, Dopamin, Withdrawal, Habit</div>
+      <svg viewBox="0 0 900 370" class="w-full h-auto text-ink">
+        <defs>
+          <marker id="arrowA" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+            <path d="M0,0 L10,4 L0,8 z" fill="currentColor"></path>
+          </marker>
+        </defs>
+        <rect x="30" y="50" width="170" height="58" rx="10" fill="#eef2f7"></rect>
+        <text x="45" y="83" font-size="16">Dose / c_t / n_t</text>
+        <rect x="250" y="30" width="190" height="70" rx="10" fill="#e8f5ef"></rect>
+        <text x="265" y="58" font-size="16">D_fast Update</text>
+        <text x="265" y="80" font-size="13">e^(-k_Df dt), α_nf n_t</text>
+        <rect x="250" y="120" width="190" height="70" rx="10" fill="#e8f5ef"></rect>
+        <text x="265" y="148" font-size="16">D_slow Update</text>
+        <text x="265" y="170" font-size="13">e^(-k_Ds dt), α_ns n_t</text>
+        <rect x="490" y="75" width="150" height="70" rx="10" fill="#f5efe8"></rect>
+        <text x="505" y="103" font-size="16">Mischung D_t</text>
+        <text x="505" y="125" font-size="13">w_f * fast + ...</text>
+        <rect x="250" y="235" width="190" height="70" rx="10" fill="#f7e8e8"></rect>
+        <text x="265" y="263" font-size="16">Withdrawal W_t</text>
+        <text x="265" y="285" font-size="13">+ κ_W(1-I)dt - a_W</text>
+        <rect x="490" y="235" width="150" height="70" rx="10" fill="#f1e8f5"></rect>
+        <text x="505" y="263" font-size="16">Habit H_t</text>
+        <text x="505" y="285" font-size="13">+ η_H q_t(1-H)</text>
+        <rect x="700" y="115" width="170" height="90" rx="10" fill="#e8ecf7"></rect>
+        <text x="715" y="150" font-size="16">Readout z_t, p_t</text>
+        <text x="715" y="173" font-size="13">σ(-w_D D + w_W W + ...)</text>
+
+        <line x1="200" y1="79" x2="250" y2="65" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowA)"></line>
+        <line x1="200" y1="79" x2="250" y2="155" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowA)"></line>
+        <line x1="440" y1="65" x2="490" y2="105" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowA)"></line>
+        <line x1="440" y1="155" x2="490" y2="115" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowA)"></line>
+        <line x1="640" y1="110" x2="700" y2="150" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowA)"></line>
+        <line x1="440" y1="265" x2="700" y2="172" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowA)"></line>
+        <line x1="640" y1="265" x2="700" y2="182" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowA)"></line>
+
+        <path d="M780,206 C780,300 580,345 330,315" fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="6,6" marker-end="url(#arrowA)"></path>
+        <text x="505" y="345" font-size="12">Rückkopplung: beobachtetes Verhalten / Kalman-Korrektur</text>
+      </svg>
+      <div class="mt-3 rounded-lg bg-ink/5 p-3 text-sm text-ink/80">
+        <div class="font-medium mb-1">Erklärung</div>
+        <ul class="space-y-1">
+          <li><strong>Input:</strong> Aus Dosis und Körperprofil entsteht die wirksame Nikotinstärke \(n_t\).</li>
+          <li><strong>Zustandsupdate:</strong> \(D_t\), \(W_t\), \(H_t\) werden pro \(\Delta t\) mit Zerfall + Einflüssen neu berechnet.</li>
+          <li><strong>Readout:</strong> Aus den Zuständen wird \(z_t\) und danach per Sigmoid \(p_t\) berechnet.</li>
+          <li><strong>Gestrichelter Pfeil:</strong> Beobachtetes Verhalten korrigiert die Schätzung (Kalman-Update).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="rounded-xl bg-white border border-black/10 p-3">
+      <div class="text-sm font-medium mb-2">B) Coaching-Regelkreis: Modell ↔ Plan ↔ Verhalten</div>
+      <svg viewBox="0 0 900 370" class="w-full h-auto text-ink">
+        <defs>
+          <marker id="arrowB" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+            <path d="M0,0 L10,4 L0,8 z" fill="currentColor"></path>
+          </marker>
+        </defs>
+        <rect x="40" y="55" width="220" height="80" rx="10" fill="#e8f5ef"></rect>
+        <text x="58" y="88" font-size="16">Kontext + Ereignisse</text>
+        <text x="58" y="110" font-size="13">(Rauchen, Craving, Sport, Trigger)</text>
+
+        <rect x="320" y="55" width="240" height="80" rx="10" fill="#e8ecf7"></rect>
+        <text x="338" y="88" font-size="16">Dynamisches Modell</text>
+        <text x="338" y="110" font-size="13">D, W, H → p_t^{model}</text>
+
+        <rect x="620" y="55" width="240" height="80" rx="10" fill="#f5efe8"></rect>
+        <text x="638" y="88" font-size="16">Regel-/Kalender-Logik</text>
+        <text x="638" y="110" font-size="13">Slots, Fenster, Coach-Entscheid</text>
+
+        <rect x="320" y="215" width="240" height="90" rx="10" fill="#f7e8e8"></rect>
+        <text x="338" y="252" font-size="16">User-Verhalten / Outcome</text>
+        <text x="338" y="274" font-size="13">Raucht / wartet / widersteht</text>
+
+        <line x1="260" y1="95" x2="320" y2="95" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowB)"></line>
+        <line x1="560" y1="95" x2="620" y2="95" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowB)"></line>
+        <line x1="740" y1="135" x2="560" y2="230" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowB)"></line>
+        <line x1="440" y1="215" x2="440" y2="135" stroke="currentColor" stroke-width="2.2" marker-end="url(#arrowB)"></line>
+        <path d="M320,270 C170,260 120,190 120,136" fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="6,6" marker-end="url(#arrowB)"></path>
+        <text x="58" y="320" font-size="12">Geschlossener Kreis: Ergebnis erzeugt neue Events und aktualisiert nächste Vorhersage.</text>
+      </svg>
+      <div class="mt-3 rounded-lg bg-ink/5 p-3 text-sm text-ink/80">
+        <div class="font-medium mb-1">Erklärung</div>
+        <ul class="space-y-1">
+          <li><strong>Schritt 1:</strong> Kontext- und Verhaltensdaten gehen ins dynamische Modell.</li>
+          <li><strong>Schritt 2:</strong> Das Modell liefert \(p_t^{model}\), die Regel- und Kalenderlogik macht daraus die Coach-Entscheidung.</li>
+          <li><strong>Schritt 3:</strong> Der Nutzer reagiert (rauchen/warten/widerstehen), wodurch neue Events entstehen.</li>
+          <li><strong>Rückkopplung:</strong> Diese neuen Events fließen in den nächsten Rechenschritt zurück.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6">
+  <h2 class="font-medium mb-3">Produktvision in der App</h2>
+  <ul class="text-sm space-y-1 text-ink/80">
+    <li>1) Datenquellen: manuelles Protokoll + Nutzungs-/Kontextmuster, perspektivisch Smartwatch (Puls, HRV, Bewegung).</li>
+    <li>2) Modell: latente Zustände (D, W, H) werden zeitlich simuliert.</li>
+    <li>3) Plan: Tagesbudget wird mathematisch reduziert und in Zeitfenster verteilt.</li>
+    <li>4) Coaching: Snoke sagt dir explizit, ob jetzt ein geplantes Rauchfenster ist oder ob du warten solltest.</li>
+  </ul>
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-3">1) Zustände des Modells</h2>
+  <ul class="text-sm space-y-1 text-ink/80 mb-3 mode-simple">
+    <li><strong>D</strong> steht für Motivation/Belohnungsantrieb.</li>
+    <li><strong>W</strong> ist Entzugsdruck (je höher, desto mehr Rauchdruck).</li>
+    <li><strong>H</strong> ist Gewohnheit/Cue-Stärke (Trigger-Effekt).</li>
+  </ul>
+  <div class="mode-expert hidden">
+  <div class="text-sm text-ink/80 mb-3">
+    $$x_t = \begin{bmatrix} D_t \\ W_t \\ H_t \end{bmatrix}$$
+  </div>
+  <ul class="text-sm space-y-1 text-ink/80">
+    <li><strong>D</strong>: Dopamin-Proxy (Belohnungsantrieb)</li>
+    <li><strong>W</strong>: Entzugsdruck (Withdrawal)</li>
+    <li><strong>H</strong>: Gewohnheits-/Cue-Stärke</li>
+    <li>Ziel: Diese drei latenten Zustände erzeugen zusammen die Craving-Wahrscheinlichkeit.</li>
+  </ul>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-sm">
+    <div class="rounded-xl bg-ink/5 p-3"><div class="text-ink/60">Aktuell \(D_t\)</div><div class="text-xl font-semibold">{{ result.dopamine }}</div></div>
+    <div class="rounded-xl bg-ink/5 p-3"><div class="text-ink/60">Aktuell \(W_t\)</div><div class="text-xl font-semibold">{{ result.withdrawal }}</div></div>
+    <div class="rounded-xl bg-ink/5 p-3"><div class="text-ink/60">Aktuell \(H_t\)</div><div class="text-xl font-semibold">{{ result.habit }}</div></div>
+  </div>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-3">2) Zeitdiskrete Dynamik mit \(\Delta t\)</h2>
+  <p class="text-sm text-ink/70 mb-3">Es wird in diskreten Schritten gerechnet. Aktuell gilt: \(\Delta t = {{ dt_seconds }}s = {{ dt_hours|round(4) }}h\).</p>
+
+  <ul class="text-sm space-y-1 text-ink/80 mb-4 mode-simple">
+    <li>Jeder Rechenschritt ist ein kurzer Zeitsprung (\(\Delta t\)); bei dir aktuell {{ dt_seconds }} Sekunden.</li>
+    <li>Nikotin- und Dopamineffekte klingen exponentiell ab (realistischer als starre Sprünge).</li>
+    <li>Sport/Nudges wirken als Aktion: mehr Dopamin, weniger Withdrawal.</li>
+  </ul>
+
+  <div class="mode-expert hidden">
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-4">
+    <div class="rounded-xl bg-ink/5 p-4 text-sm overflow-x-auto">
+      $$n_t = \frac{c_t}{c_t + K_d} \cdot e^{-\lambda_\text{nic}\Delta t}, \quad
+      c_t = \frac{\text{dose}_{mg}}{2.5 \cdot \text{weight}_{kg}}$$
+      <div class="mt-3 text-xs text-ink/80">
+        \(\text{dose}_{mg}={{ params.cigarette_dose_mg|round(3) }}\), \(K_d={{ params.nicotine_kd|round(4) }}\), \(\lambda_\text{nic}={{ params.lambda_nicotine|round(4) }}\)<br>
+        \(c_t={{ personalized_values.nicotine_conc|round(6) }}\), \(c_t/(c_t+K_d)={{ personalized_values.nicotine_receptor|round(4) }}\), \(n_t={{ personalized_values.nicotine_effect_dt|round(4) }}\)
+      </div>
+    </div>
+    <div class="rounded-xl bg-white p-4 border border-black/10 text-sm text-ink/80">
+      <div class="font-medium text-sm mb-2">Formelzeichen</div>
+      <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-x-3 gap-y-1">
+        <div class="font-semibold whitespace-nowrap">\(n_t\):</div><div>Nikotinwirkung im Schritt \(t\)</div>
+        <div class="font-semibold whitespace-nowrap">\(c_t\):</div><div>Nikotinkonzentrations-Proxy</div>
+        <div class="font-semibold whitespace-nowrap">\(K_d\):</div><div>Rezeptor-Halbmax-Konstante</div>
+        <div class="font-semibold whitespace-nowrap">\(\lambda_{nic}\):</div><div>Nikotin-Abklingrate</div>
+        <div class="font-semibold whitespace-nowrap">\(\Delta t\):</div><div>Zeitschrittweite</div>
+        <div class="font-semibold whitespace-nowrap">\(\text{dose}_{mg}\):</div><div>Dosis in mg pro Ereignis</div>
+        <div class="font-semibold whitespace-nowrap">\(\text{weight}_{kg}\):</div><div>Körpergewicht in kg</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-4">
+    <div class="rounded-xl bg-ink/5 p-4 text-sm overflow-x-auto">
+      $$D_t^{fast} = D_{t-1}^{fast}e^{-k_{Df}\Delta t} + \alpha_{nf}n_t + \alpha_{rf}r_t - \beta_{sf}s_t + 0.7a_D$$
+      $$D_t^{slow} = D_{t-1}^{slow}e^{-k_{Ds}\Delta t} + \alpha_{ns}n_t + \alpha_{rs}r_t - \beta_{ss}s_t + 0.3a_D$$
+      $$D_t = w_f D_t^{fast} + (1-w_f)D_t^{slow}$$
+      <div class="mt-3 text-xs text-ink/80">
+        \(e^{-k_{Df}\Delta t}={{ decay_factors.dopamine_fast|round(4) }}\),
+        \(e^{-k_{Ds}\Delta t}={{ decay_factors.dopamine_slow|round(4) }}\),
+        \(w_f={{ params.dopamine_fast_weight|round(3) }}\)<br>
+        \(\alpha_{nf}={{ personalized_values.alpha_nic_fast|round(4) }}\),
+        \(\alpha_{ns}={{ personalized_values.alpha_nic_slow|round(4) }}\)
+      </div>
+    </div>
+    <div class="rounded-xl bg-white p-4 border border-black/10 text-sm text-ink/80">
+      <div class="font-medium text-sm mb-2">Formelzeichen</div>
+      <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-x-3 gap-y-1">
+        <div class="font-semibold whitespace-nowrap">\(D_t^{fast}, D_t^{slow}\):</div><div>schneller/langsamer Dopaminanteil</div>
+        <div class="font-semibold whitespace-nowrap">\(D_t\):</div><div>kombinierter Dopaminzustand</div>
+        <div class="font-semibold whitespace-nowrap">\(k_{Df}, k_{Ds}\):</div><div>Dopamin-Abklingraten</div>
+        <div class="font-semibold whitespace-nowrap">\(\alpha_{n*}\):</div><div>Nikotin-Sensitivitätsgewichte</div>
+        <div class="font-semibold whitespace-nowrap">\(\alpha_{r*}\):</div><div>Reward-Gewichte</div>
+        <div class="font-semibold whitespace-nowrap">\(\beta_{s*}\):</div><div>Stress-Dämpfungsgewichte</div>
+        <div class="font-semibold whitespace-nowrap">\(r_t\):</div><div>Reward-Eingang</div>
+        <div class="font-semibold whitespace-nowrap">\(s_t\):</div><div>Stress-Eingang</div>
+        <div class="font-semibold whitespace-nowrap">\(a_D\):</div><div>Aktions-bedingter Dopaminboost</div>
+        <div class="font-semibold whitespace-nowrap">\(w_f\):</div><div>Gewicht des schnellen Anteils</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-4">
+    <div class="rounded-xl bg-ink/5 p-4 text-sm overflow-x-auto">
+      $$W_t = W_{t-1}e^{-k_W\Delta t} + \kappa_W(1-\mathbb{1}_{\text{dose}>0})\Delta t - a_W$$
+      $$H_t = H_{t-1}e^{-k_H\Delta t} + \eta_H q_t (1-H_{t-1})$$
+      <div class="mt-3 text-xs text-ink/80">
+        \(e^{-k_W\Delta t}={{ decay_factors.withdrawal|round(4) }}\),
+        \(\kappa_W={{ personalized_values.k_withdrawal|round(4) }}\),
+        \(e^{-k_H\Delta t}={{ decay_factors.habit|round(4) }}\),
+        \(\eta_H={{ personalized_values.habit_learning|round(4) }}\)
+      </div>
+    </div>
+    <div class="rounded-xl bg-white p-4 border border-black/10 text-sm text-ink/80">
+      <div class="font-medium text-sm mb-2">Formelzeichen</div>
+      <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-x-3 gap-y-1">
+        <div class="font-semibold whitespace-nowrap">\(W_t\):</div><div>Withdrawal-/Entzugszustand</div>
+        <div class="font-semibold whitespace-nowrap">\(H_t\):</div><div>Habit-/Cue-Zustand</div>
+        <div class="font-semibold whitespace-nowrap">\(k_W\):</div><div>Withdrawal-Abklingrate</div>
+        <div class="font-semibold whitespace-nowrap">\(k_H\):</div><div>Habit-Abklingrate</div>
+        <div class="font-semibold whitespace-nowrap">\(\kappa_W\):</div><div>Withdrawal-Aufbaurate ohne Nikotin</div>
+        <div class="font-semibold whitespace-nowrap">\(\eta_H\):</div><div>Habit-Lernrate</div>
+        <div class="font-semibold whitespace-nowrap">\(q_t\):</div><div>Cue-Eingang</div>
+        <div class="font-semibold whitespace-nowrap">\(\mathbb{1}_{\text{dose}>0}\):</div><div>Indikator (1 wenn Dosis vorhanden)</div>
+        <div class="font-semibold whitespace-nowrap">\(a_W\):</div><div>Aktions-bedingte Withdrawal-Reduktion</div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="text-sm space-y-1 text-ink/80">
+    <li>Exponentialterme modellieren „natürliches Abklingen“ biologischer Effekte.</li>
+    <li>\(a_D, a_W\) sind Interventions-/Aktionsanteile (z. B. Nudge, Sport-Effekt).</li>
+    <li>Alle Zustände werden stabil begrenzt (Clamping), damit das Modell numerisch robust bleibt.</li>
+  </ul>
+  </div>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-3">3) Craving-Readout (Sigmoid)</h2>
+  <ul class="text-sm space-y-1 text-ink/80 mb-4 mode-simple">
+    <li>Das Modell bildet aus D, W, H, Stress und Cue einen Gesamtscore.</li>
+    <li>Dieser Score wird per Sigmoid in eine Wahrscheinlichkeit zwischen 0% und 100% umgerechnet.</li>
+    <li>Danach kommt noch die Plan-/Regellogik für konkrete Coaching-Entscheidungen.</li>
+  </ul>
+  <div class="mode-expert hidden">
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+    <div class="rounded-xl bg-ink/5 p-4 text-sm overflow-x-auto">
+      $$z_t = -w_DD_t + w_WW_t + w_HH_t + w_ss_t + w_qq_t + b$$
+      $$p_t^{model} = \sigma(z_t) = \frac{1}{1 + e^{-z_t}}$$
+    </div>
+    <div class="rounded-xl bg-white p-4 border border-black/10 text-sm text-ink/80">
+      <div class="font-medium text-sm mb-2">Formelzeichen</div>
+      <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-x-3 gap-y-1">
+        <div class="font-semibold whitespace-nowrap">\(z_t\):</div><div>linearer Craving-Score</div>
+        <div class="font-semibold whitespace-nowrap">\(p_t^{model}\):</div><div>Modellwahrscheinlichkeit</div>
+        <div class="font-semibold whitespace-nowrap">\(\sigma(\cdot)\):</div><div>Sigmoid-Funktion</div>
+        <div class="font-semibold whitespace-nowrap">\(w_D,w_W,w_H,w_s,w_q\):</div><div>Einflussgewichte</div>
+        <div class="font-semibold whitespace-nowrap">\(b\):</div><div>Bias/Grundoffset</div>
+        <div class="font-semibold whitespace-nowrap">\(D_t,W_t,H_t,s_t,q_t\):</div><div>Zustands- und Kontextsignale</div>
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 text-sm">
+    <div class="rounded-xl bg-ink/5 p-3">
+      <div class="text-ink/60">Termbeiträge für \(z_t\)</div>
+      <div class="mt-1 text-xs text-ink/80">
+        \(-w_DD_t={{ readout_terms.dopamine|round(4) }}\)<br>
+        \(w_WW_t={{ readout_terms.withdrawal|round(4) }}\)<br>
+        \(w_HH_t={{ readout_terms.habit|round(4) }}\)<br>
+        \(w_ss_t={{ readout_terms.stress|round(4) }}\) mit \(s_t={{ stress_proxy|round(3) }}\)<br>
+        \(w_qq_t={{ readout_terms.cue|round(4) }}\) mit \(q_t={{ cue_proxy|round(3) }}\)<br>
+        \(b={{ readout_terms.bias|round(4) }}\)
+      </div>
+      <div class="mt-2 font-semibold">\(z_t={{ z_now|round(4) }}\)</div>
+    </div>
+    <div class="rounded-xl bg-ink/5 p-3">
+      <div class="text-ink/60">Wahrscheinlichkeiten jetzt ({{ as_of.astimezone().strftime('%H:%M:%S') }})</div>
+      <div class="text-xs text-ink/80 mt-1">Modell-only: {{ (p_model_now * 100)|round(1) }}%</div>
+      <div class="text-xs text-ink/80">Mit Regel-/Kalender-Logik: {{ (result.p_now * 100)|round(1) }}%</div>
+      <div class="text-xs text-ink/80">
+        Unsicherheitsband (10–90% Ensemble): {{ (result.p_low * 100)|round(1) }}–{{ (result.p_high * 100)|round(1) }}%
+      </div>
+      <div class="text-xs text-ink/80">
+        Unsicherheitsbreite: {{ (result.uncertainty_width * 100)|round(1) }} Prozentpunkte · Vertrauen: {{ result.confidence_level }}
+      </div>
+      <div class="text-xs text-ink/80">
+        Regelfaktor:
+        {% if rule_factor_now is not none %}
+          ×{{ rule_factor_now|round(3) }}
+        {% else %}
+          —
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <ul class="text-sm space-y-1 text-ink/80 mt-3">
+    <li>Negative Dopaminterm senkt Craving, Withdrawal/Habit/Stress/Cues erhöhen es.</li>
+    <li>Die Sigmoidfunktion übersetzt den linearen Score \(z_t\) in eine Wahrscheinlichkeit zwischen 0 und 1.</li>
+    <li>Für die App-Entscheidung wird danach die Regel-/Planungsschicht angewendet.</li>
+  </ul>
+  </div>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-3">4) Personalisierung und Halbwertszeiten</h2>
+  <ul class="text-sm space-y-1 text-ink/80 mb-4 mode-simple">
+    <li>Deine Körperdaten beeinflussen, wie schnell Nikotinwirkung und Modellzustände abklingen.</li>
+    <li>Faustregel: Halbwertszeit sagt, wann ein Effekt auf die Hälfte gefallen ist.</li>
+    <li>So passt sich die Rechnung an deine individuellen Parameter an.</li>
+  </ul>
+  <div class="mode-expert hidden">
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-3 mb-4">
+    <div class="rounded-xl bg-ink/5 p-4 text-sm overflow-x-auto">
+      $$t_{1/2} = \frac{\ln 2}{k}, \quad
+      t_{1/2,\text{nic}} = 2.0 \cdot (1+0.5\cdot bf)\cdot\frac{70}{\max(35,w)}$$
+      $$\text{sensitivity} = \mathrm{clip}\left((1-0.3\,bf)\cdot(1-0.002\,age),\,0.5,\,1.5\right)$$
+    </div>
+    <div class="rounded-xl bg-white p-4 border border-black/10 text-sm text-ink/80">
+      <div class="font-medium text-sm mb-2">Formelzeichen</div>
+      <div class="grid grid-cols-[140px_minmax(0,1fr)] gap-x-3 gap-y-1">
+        <div class="font-semibold whitespace-nowrap">\(t_{1/2}\):</div><div>Halbwertszeit</div>
+        <div class="font-semibold whitespace-nowrap">\(k\):</div><div>Abklingrate</div>
+        <div class="font-semibold whitespace-nowrap">\(t_{1/2,nic}\):</div><div>geschätzte Nikotin-Halbwertszeit</div>
+        <div class="font-semibold whitespace-nowrap">\(bf\):</div><div>Körperfettanteil (0..1)</div>
+        <div class="font-semibold whitespace-nowrap">\(w\):</div><div>Körpergewicht (kg)</div>
+        <div class="font-semibold whitespace-nowrap">\(\text{sensitivity}\):</div><div>Dopamin-Sensitivitätsfaktor</div>
+        <div class="font-semibold whitespace-nowrap">\(age\):</div><div>Alter in Jahren</div>
+        <div class="font-semibold whitespace-nowrap">\(\mathrm{clip}\):</div><div>Begrenzung auf Wertebereich</div>
+      </div>
+    </div>
+  </div>
+  <p class="text-sm text-ink/70 mb-3">
+    So werden Körperdaten direkt in Modellparameter übersetzt.
+  </p>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm mb-3">
+    <div class="rounded-xl bg-ink/5 p-3">Gewicht \(w\): <strong>{{ personalized_values.weight_kg|round(1) }} kg</strong></div>
+    <div class="rounded-xl bg-ink/5 p-3">Körperfett \(bf\): <strong>{{ (personalized_values.body_fat * 100)|round(1) }} %</strong></div>
+    <div class="rounded-xl bg-ink/5 p-3">Alter: <strong>{{ personalized_values.age_years }}</strong></div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3">
+    <div class="rounded-xl bg-ink/5 p-3">Geschätzte Nikotin-Halbwertszeit aus Profil: <strong>{{ personalized_values.estimated_t_half_h|round(2) }} h</strong></div>
+    <div class="rounded-xl bg-ink/5 p-3">Dopamin-Sensitivität aus Profil: <strong>{{ personalized_values.sensitivity|round(3) }}</strong></div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+    <div class="rounded-xl bg-ink/5 p-3">Nikotin: <strong>{{ half_lives.nicotine_h|round(2) if half_lives.nicotine_h is not none else "—" }} h</strong></div>
+    <div class="rounded-xl bg-ink/5 p-3">Dopamin fast: <strong>{{ half_lives.dopamine_fast_h|round(2) if half_lives.dopamine_fast_h is not none else "—" }} h</strong></div>
+    <div class="rounded-xl bg-ink/5 p-3">Dopamin langsam: <strong>{{ half_lives.dopamine_slow_h|round(2) if half_lives.dopamine_slow_h is not none else "—" }} h</strong></div>
+    <div class="rounded-xl bg-ink/5 p-3">Withdrawal-Abbau: <strong>{{ half_lives.withdrawal_h|round(2) if half_lives.withdrawal_h is not none else "—" }} h</strong></div>
+    <div class="rounded-xl bg-ink/5 p-3 md:col-span-2">Habit-Abbau: <strong>{{ half_lives.habit_h|round(2) if half_lives.habit_h is not none else "—" }} h</strong></div>
+  </div>
+  </div>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-3">5) Validierung, Baselines und Ablationen</h2>
+  <p class="text-sm text-ink/70 mb-3">
+    Dieser Block zeigt, ob das Modell nur „gut aussieht“ oder in Metriken besser als einfache Baselines ist.
+  </p>
+  {% if validation_report %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm mb-4">
+      <div class="rounded-xl bg-ink/5 p-3">
+        <div class="text-ink/60">Brier (Modell)</div>
+        <div class="text-xl font-semibold">{{ validation_report.model.brier }}</div>
+      </div>
+      <div class="rounded-xl bg-ink/5 p-3">
+        <div class="text-ink/60">AUC (Modell)</div>
+        <div class="text-xl font-semibold">{{ validation_report.model.auc if validation_report.model.auc is not none else "—" }}</div>
+      </div>
+      <div class="rounded-xl bg-ink/5 p-3">
+        <div class="text-ink/60">Kalibrierungsfehler</div>
+        <div class="text-xl font-semibold">{{ validation_report.model.calibration_error }}</div>
+      </div>
+      <div class="rounded-xl bg-ink/5 p-3">
+        <div class="text-ink/60">Samples</div>
+        <div class="text-xl font-semibold">{{ validation_report.model.sample_count }}</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+      <div class="rounded-xl bg-white border border-black/10 p-3">
+        <div class="font-medium mb-1">Baselines</div>
+        <ul class="space-y-1 text-ink/80">
+          {% for name, m in validation_report.baselines.items() %}
+          <li><strong>{{ name }}</strong>: Brier {{ m.brier }}, AUC {{ m.auc if m.auc is not none else "—" }}, ECE {{ m.calibration_error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="rounded-xl bg-white border border-black/10 p-3">
+        <div class="font-medium mb-1">Ablationen</div>
+        <ul class="space-y-1 text-ink/80">
+          {% for name, m in validation_report.ablations.items() %}
+          <li><strong>{{ name }}</strong>: Brier {{ m.brier }}, AUC {{ m.auc if m.auc is not none else "—" }}, ECE {{ m.calibration_error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  {% else %}
+    <p class="text-sm text-ink/70">
+      Für robuste Metriken sind noch zu wenige Beobachtungen vorhanden (mindestens 8 nötig).
+    </p>
+  {% endif %}
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-3">6) Wissenschaftliche Quellen (DOI)</h2>
+  <ul class="space-y-2 text-sm text-ink/80">
+    {% for ref in scientific_refs %}
+    <li class="rounded-xl bg-white border border-black/10 p-3">
+      <div><strong>{{ ref.authors }}</strong> — {{ ref.title }}</div>
+      <div class="text-xs mt-1">DOI: <a class="underline" href="https://doi.org/{{ ref.doi }}" target="_blank" rel="noopener noreferrer">{{ ref.doi }}</a></div>
+      <div class="text-xs mt-1 text-ink/70">Bezug im Modell: {{ ref.scope }}</div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm mode-expert hidden">
+  <h2 class="font-medium mb-3">7) Aktive Runtime-Parameter (vollständig)</h2>
+  <p class="text-sm text-ink/70 mb-3">
+    Das sind die tatsächlich verwendeten Parameter nach Konfigurations-Mapping und Personalisierung.
+  </p>
+  <pre class="text-xs bg-ink/5 rounded-xl p-4 overflow-x-auto"><code>{{ params_dict_json }}</code></pre>
+</section>
+
+<section class="mt-6 bg-white/60 rounded-2xl p-6 shadow-sm mode-expert hidden">
+  <h2 class="font-medium mb-3">8) Gespeicherte User-Config</h2>
+  <pre class="text-xs bg-ink/5 rounded-xl p-4 overflow-x-auto"><code>{{ config_json }}</code></pre>
+</section>
+<script>
+  const simpleBtn = document.getElementById("mode-simple-btn");
+  const expertBtn = document.getElementById("mode-expert-btn");
+  const simpleBlocks = document.querySelectorAll(".mode-simple");
+  const expertBlocks = document.querySelectorAll(".mode-expert");
+
+  function setExplainMode(mode) {
+    const showExpert = mode === "expert";
+    simpleBlocks.forEach((el) => el.classList.toggle("hidden", showExpert));
+    expertBlocks.forEach((el) => el.classList.toggle("hidden", !showExpert));
+    simpleBtn.classList.toggle("bg-accent", !showExpert);
+    simpleBtn.classList.toggle("text-white", !showExpert);
+    simpleBtn.classList.toggle("bg-white", showExpert);
+    simpleBtn.classList.toggle("text-ink", showExpert);
+    expertBtn.classList.toggle("bg-accent", showExpert);
+    expertBtn.classList.toggle("text-white", showExpert);
+    expertBtn.classList.toggle("bg-white", !showExpert);
+    expertBtn.classList.toggle("text-ink", !showExpert);
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise();
+    }
+  }
+
+  simpleBtn?.addEventListener("click", () => setExplainMode("simple"));
+  expertBtn?.addEventListener("click", () => setExplainMode("expert"));
+  setExplainMode("simple");
+
+  window.MathJax = {
+    tex: {inlineMath: [['\\(', '\\)'], ['$', '$']]},
+    svg: {fontCache: 'global'}
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+{% endblock %}

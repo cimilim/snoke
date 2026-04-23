@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Snoke – Kalender{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-semibold mb-2">Kalender, Termine und freie Rauch-Slots</h1>
+<p class="text-ink/70 mb-6">
+  Trag hier deine Termine ein. Snoke nutzt nur die verbleibenden freien Zeiten,
+  um Rauch-Slots zu planen.
+</p>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6">
+  <h2 class="font-medium mb-4">{{ month_label }}</h2>
+  <div class="grid grid-cols-7 gap-1 text-xs text-ink/60 mb-2">
+    <div class="text-center">Mo</div><div class="text-center">Di</div><div class="text-center">Mi</div>
+    <div class="text-center">Do</div><div class="text-center">Fr</div><div class="text-center">Sa</div><div class="text-center">So</div>
+  </div>
+  {% for row in week_rows %}
+  <div class="grid grid-cols-7 gap-1 mb-1">
+    {% for c in row %}
+    <a href="/calendar?day={{ c.date }}"
+       class="rounded-lg border px-2 py-2 text-xs min-h-[54px]
+              {% if c.is_selected %}border-accent bg-accent/10{% elif c.is_today %}border-warn bg-warn/10{% else %}border-ink/10 bg-white/40{% endif %}
+              {% if not c.in_month %}opacity-40{% endif %}">
+      <div class="font-medium flex items-center justify-between">
+        <span>{{ c.day }}</span>
+        {% if c.is_done %}<span title="Erledigt">✅</span>{% endif %}
+      </div>
+      {% if c.blocks_count > 0 %}
+      <div class="text-[10px] text-danger">{{ c.blocks_count }} Termin(e)</div>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="font-medium">Tag abhaken</h2>
+    <form method="post" action="/calendar/day-toggle" class="inline-flex items-center gap-2">
+      <input type="hidden" name="selected_day" value="{{ selected_day }}">
+      <input type="hidden" name="done" value="{% if selected_day_done %}0{% else %}1{% endif %}">
+      <button class="text-xs border rounded-lg px-3 py-1.5 {% if selected_day_done %}border-danger/40 text-danger{% else %}border-accent/40 text-accent{% endif %}">
+        {% if selected_day_done %}Als nicht erledigt markieren{% else %}Tag als erledigt markieren{% endif %}
+      </button>
+    </form>
+  </div>
+  <p class="text-sm text-ink/60 mb-4">
+    Status für {{ selected_day }}:
+    {% if selected_day_done %}<strong class="text-accent">erledigt</strong>{% else %}<strong>offen</strong>{% endif %}
+  </p>
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6">
+  <h2 class="font-medium mb-4">Termin eintragen ({{ selected_day }})</h2>
+  <form method="post" action="/calendar/appointments/add" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+    <input type="hidden" name="selected_day" value="{{ selected_day }}">
+    <input name="title" placeholder="Terminname (z. B. Meeting)" class="border rounded-lg px-3 py-2 md:col-span-2" required>
+    <input type="date" name="date" value="{{ selected_day }}" class="border rounded-lg px-3 py-2" required>
+    <div class="grid grid-cols-2 gap-2 md:col-span-4">
+      <input type="time" name="start_time" class="border rounded-lg px-3 py-2" required>
+      <input type="time" name="end_time" class="border rounded-lg px-3 py-2" required>
+    </div>
+    <button class="md:col-span-4 bg-accent text-white py-2 px-4 rounded-xl">Termin speichern</button>
+  </form>
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6">
+  <h2 class="font-medium mb-3">Termine am ausgewählten Tag</h2>
+  {% if selected_blocks %}
+  <ul class="space-y-2">
+    {% for b in selected_blocks %}
+    <li class="flex items-center justify-between rounded-lg border border-ink/10 px-3 py-2 text-sm">
+      <div>
+        <span class="font-medium">{{ b.title }}</span>
+        <span class="text-ink/60"> · {{ b.start.strftime('%H:%M') }}–{{ b.end.strftime('%H:%M') }}</span>
+      </div>
+      <form method="post" action="/calendar/appointments/delete">
+        <input type="hidden" name="event_id" value="{{ b.id }}">
+        <input type="hidden" name="selected_day" value="{{ selected_day }}">
+        <button class="text-danger text-xs border border-danger/30 rounded px-2 py-1">Löschen</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-sm text-ink/60">Keine Termine für diesen Tag.</p>
+  {% endif %}
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm mb-6">
+  <h2 class="font-medium mb-3">Freie Slots zum Rauchen (Lücken > 9 Minuten, nach Terminabzug)</h2>
+  {% if selected_free_windows %}
+  <ul class="space-y-1 text-sm">
+    {% for s, e in selected_free_windows %}
+    <li class="rounded-lg bg-ink/5 px-3 py-2">{{ s.strftime('%H:%M') }}–{{ e.strftime('%H:%M') }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-sm text-ink/60">Keine freien Slots an diesem Tag verfügbar.</p>
+  {% endif %}
+</section>
+
+<section class="bg-white/60 rounded-2xl p-6 shadow-sm">
+  <h2 class="font-medium mb-3">Grundfenster pro Wochentag</h2>
+  <p class="text-sm text-ink/60 mb-3">
+    Diese Grundfenster definieren, wann Rauchen grundsätzlich möglich ist. Termine
+    reduzieren diese Zeiten danach weiter.
+  </p>
+  <form method="post" action="/calendar" class="space-y-3">
+    {% for d in days %}
+    <div class="rounded-xl border border-ink/10 p-3 flex flex-wrap items-center gap-3">
+      <label class="inline-flex items-center gap-2 min-w-[140px]">
+        <input type="checkbox" name="{{ d.name }}_enabled" {% if d.enabled %}checked{% endif %}>
+        <span class="font-medium">{{ d.label }}</span>
+      </label>
+      <div class="flex items-center gap-2 text-sm text-ink/70">
+        <span>von</span>
+        <input type="time" name="{{ d.name }}_start" value="{{ d.start }}" class="border rounded-lg px-2 py-1">
+        <span>bis</span>
+        <input type="time" name="{{ d.name }}_end" value="{{ d.end }}" class="border rounded-lg px-2 py-1">
+      </div>
+    </div>
+    {% endfor %}
+    <button class="bg-accent text-white py-2 px-4 rounded-xl">Grundfenster speichern</button>
+  </form>
+</section>
+{% endblock %}
