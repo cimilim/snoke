@@ -4,7 +4,7 @@ import Foundation
 @MainActor
 final class AppConfig: ObservableObject {
     static let backendURLKey = "snoke.backend.url"
-    static let defaultBackendURL = "https://YOUR-SNOKE-DOMAIN"
+    static let defaultBackendURL = "https://api.odali.al"
 
     @Published private(set) var backendURL: String
 
