@@ -5,6 +5,7 @@
 xcuserdata/
 *.xcworkspace/
 DerivedData/
+.deriveddata-*/
 build/
 *.ipa
 *.dSYM.zip
@@ -35,3 +36,4 @@ backend/*.db-journal
 # --- IDE ---
 .vscode/
 .idea/
+

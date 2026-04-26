@@ -73,3 +73,10 @@ Single-User-Modus läuft alles lokal; es gibt keinen externen Dienst.
 - [Architektur](docs/architecture.md)
 - [Craving-Wahrscheinlichkeits-Modell](docs/model.md)
 - [Deployment](docs/deploy.md)
+
+## iOS App (SwiftUI)
+
+Der iOS-Code liegt unter `ios/SnokeIOS/`. Ein `*.xcodeproj` wird aktuell nicht mit eingecheckt,
+du legst es lokal an und haengst die Quellen ein.
+
+Siehe Anleitung in [`ios/README.md`](ios/README.md).
